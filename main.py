@@ -4,6 +4,7 @@ import cv2
 from fastiecm import fastiecm
 import os
 
+
 def contrast_stretch(im):
     in_min = 0.0
     in_max = min(0.4345989304812834, np.percentile(im, 95))
@@ -28,48 +29,48 @@ def calc_ndvi(image):
 
 path = "../IR-photos" # change to your own path
 filename = "photo_01086_51846002189_o.jpg" # any IR photo you want to use
-if True:
-    img = cv2.imread(path+'/'+filename, cv2.IMREAD_COLOR)
-    if img is None:
-        sys.exit("Could not read the image. Check the filename and path.")
+
+img = cv2.imread(path+'/'+filename, cv2.IMREAD_COLOR)
+if img is None:
+    sys.exit("Could not read the image. Check the filename and path.")
 
 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    windowUp = np.array([179, 255, 30]) # HSV
-    windowDown = np.array([0, 0, 0])
+windowUp = np.array([179, 255, 30])
+windowDown = np.array([0, 0, 0])
 
-    window = cv2.bitwise_and(img, img, mask = cv2.inRange(img, windowDown, windowUp))
+window = cv2.bitwise_and(img, img, mask = cv2.inRange(img, windowDown, windowUp))
 
-    cloudsUp = np.array([179, 80, 255]) # HSV
-    cloudsDown = np.array([0, 0, 185])
+cloudsUp = np.array([179, 80, 255])
+cloudsDown = np.array([0, 0, 185])
 
-    clouds = cv2.bitwise_and(img, img, mask = cv2.inRange(img, cloudsDown, cloudsUp))
+clouds = cv2.bitwise_and(img, img, mask = cv2.inRange(img, cloudsDown, cloudsUp))
 
-    waterUp = np.array([80, 255, 185]) # HSV
-    waterDown = np.array([0, 0, 30])
+waterUp = np.array([80, 255, 185])
+waterDown = np.array([0, 0, 30])
 
-    water = cv2.bitwise_and(img, img, mask = cv2.inRange(img, waterDown, waterUp))
+water = cv2.bitwise_and(img, img, mask = cv2.inRange(img, waterDown, waterUp))
 
-    waterUp = np.array([179, 55, 90]) # HSV
-    waterDown = np.array([0, 0, 30])
+waterUp = np.array([179, 55, 90])
+waterDown = np.array([0, 0, 30])
 
-    water = cv2.bitwise_or(water, cv2.bitwise_and(img, img, mask = cv2.inRange(img, waterDown, waterUp)))
+water = cv2.bitwise_or(water, cv2.bitwise_and(img, img, mask = cv2.inRange(img, waterDown, waterUp)))
 
-    cv2.imshow('Initial Image', cv2.cvtColor(img, cv2.COLOR_HSV2BGR))
-    cv2.imshow('Clouds', cv2.cvtColor(clouds, cv2.COLOR_HSV2BGR))
-    cv2.imshow('Water', cv2.cvtColor(water, cv2.COLOR_HSV2BGR))
-    cv2.imshow('NDVI Raw', calc_ndvi(cv2.cvtColor(img, cv2.COLOR_HSV2BGR)))
-    
-    land = img - clouds - water - window # replace with function that checks for < 0
-    cv2.imshow('Land', cv2.cvtColor(land, cv2.COLOR_HSV2BGR))
-    toBeColorMapped = contrast_stretch(calc_ndvi(cv2.cvtColor(land, cv2.COLOR_HSV2BGR))).astype(np.uint8)
-    cv2.imshow('NDVI', toBeColorMapped)
-    cv2.imshow('Color Mapped NDVI', cv2.applyColorMap(toBeColorMapped, fastiecm))
-    
+cv2.imshow('Initial Image', cv2.cvtColor(img, cv2.COLOR_HSV2BGR))
+cv2.imshow('Clouds', cv2.cvtColor(clouds, cv2.COLOR_HSV2BGR))
+cv2.imshow('Water', cv2.cvtColor(water, cv2.COLOR_HSV2BGR))
+cv2.imshow('NDVI Raw', calc_ndvi(cv2.cvtColor(img, cv2.COLOR_HSV2BGR)))
+
+land = img - clouds - water - window # TO DO: this should be replaced with a function that checks for pixel values < 0
+cv2.imshow('Land', cv2.cvtColor(land, cv2.COLOR_HSV2BGR))
+toBeColorMapped = contrast_stretch(calc_ndvi(cv2.cvtColor(land, cv2.COLOR_HSV2BGR))).astype(np.uint8)
+cv2.imshow('NDVI', toBeColorMapped)
+cv2.imshow('Color Mapped NDVI', cv2.applyColorMap(toBeColorMapped, fastiecm))
+
+# wait until q is pressed on the CV2 window
 while True:
     if cv2.waitKey(1) == ord('q'):
         break
-# When everything done, release the capture
 
 
