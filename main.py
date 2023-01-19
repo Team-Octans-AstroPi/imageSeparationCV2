@@ -62,7 +62,7 @@ cv2.imshow('Clouds', cv2.cvtColor(clouds, cv2.COLOR_HSV2BGR))
 cv2.imshow('Water', cv2.cvtColor(water, cv2.COLOR_HSV2BGR))
 cv2.imshow('NDVI Raw', calc_ndvi(cv2.cvtColor(img, cv2.COLOR_HSV2BGR)))
 
-land = img - clouds - water - window # TO DO: this should be replaced with a function that checks for pixel values < 0
+land = cv2.subtract(img, cv2.add(cv2.add(clouds, water), window))
 cv2.imshow('Land', cv2.cvtColor(land, cv2.COLOR_HSV2BGR))
 toBeColorMapped = contrast_stretch(calc_ndvi(cv2.cvtColor(land, cv2.COLOR_HSV2BGR))).astype(np.uint8)
 cv2.imshow('NDVI', toBeColorMapped)
