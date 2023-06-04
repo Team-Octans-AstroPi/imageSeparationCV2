@@ -19,6 +19,19 @@ def contrast_stretch(im):
 
     return out
 
+def contrast_stretch_original(image):
+    in_min = np.percentile(image, 5)
+    in_max = np.percentile(image, 95)
+    
+    out_min= 0.0
+    out_max = 255.0
+    
+    out = image - in_min
+    out *= ((out_min - out_max) / (in_min - in_max))
+    out += in_min
+    
+    return out
+
 def calc_ndvi(image):
     b, g, r = cv2.split(image)
     bottom = (r.astype(float) + b.astype(float))
@@ -28,8 +41,8 @@ def calc_ndvi(image):
     ndvi = (b.astype(float) - r) / bottom
     return ndvi
 
-path = "../IR-photos" # change to your own path
-filename = "photo_01086_51846002189_o.jpg" # any IR photo you want to use
+path = "" # change to your own path
+filename = "OCTANS_1404.jpg" # any IR photo you want to use
 
 img = cv2.imread(path+'/'+filename, cv2.IMREAD_COLOR)
 if img is None:
@@ -58,22 +71,33 @@ waterDown = np.array([0, 0, 30])
 
 water = cv2.bitwise_or(water, cv2.bitwise_and(img, img, mask = cv2.inRange(img, waterDown, waterUp)))
 
-#cv2.imshow('Initial Image', cv2.cvtColor(img, cv2.COLOR_HSV2BGR))
-#cv2.imshow('Clouds', cv2.cvtColor(clouds, cv2.COLOR_HSV2BGR))
-#cv2.imshow('Water', cv2.cvtColor(water, cv2.COLOR_HSV2BGR))
-#cv2.imshow('NDVI Raw', calc_ndvi(cv2.cvtColor(img, cv2.COLOR_HSV2BGR)))
+vegetationUp = np.array([179, 255, 255])
+vegetationDown = np.array([30, 20, 55])
+
+vegetation = cv2.bitwise_and(img, img, mask = cv2.inRange(img, vegetationDown, vegetationUp))
+
+cv2.imshow('Initial Image', cv2.cvtColor(img, cv2.COLOR_HSV2BGR))
+cv2.imshow('Vegetation Image', cv2.cvtColor(vegetation, cv2.COLOR_HSV2BGR))
+cv2.imshow('Clouds', cv2.cvtColor(clouds, cv2.COLOR_HSV2BGR))
+cv2.imshow('Water', cv2.cvtColor(water, cv2.COLOR_HSV2BGR))
+cv2.imshow('NDVI Raw', calc_ndvi(cv2.cvtColor(img, cv2.COLOR_HSV2BGR)))
+raw = contrast_stretch_original(calc_ndvi(cv2.cvtColor(img, cv2.COLOR_HSV2BGR))).astype(np.uint8)
+cv2.imshow('Color Mapped Raw NDVI', cv2.applyColorMap(raw, fastiecm))
+
 
 land = cv2.subtract(img, cv2.add(cv2.add(clouds, water), window))
-#cv2.imshow('Land', cv2.cvtColor(land, cv2.COLOR_HSV2BGR))
-toBeColorMapped = contrast_stretch(calc_ndvi(cv2.cvtColor(land, cv2.COLOR_HSV2BGR))).astype(np.uint8)
-#cv2.imshow('NDVI', toBeColorMapped)
+cv2.imshow('Land', cv2.cvtColor(land, cv2.COLOR_HSV2BGR))
+toBeColorMapped = contrast_stretch(calc_ndvi(cv2.cvtColor(vegetation, cv2.COLOR_HSV2BGR))).astype(np.uint8)
+cv2.imshow('NDVI', toBeColorMapped)
 
 ndvicm = cv2.applyColorMap(toBeColorMapped, fastiecm)
 cv2.imshow('Color Mapped NDVI', cv2.applyColorMap(toBeColorMapped, fastiecm))
 
+
+
 """
     Dominant Plant Health
-    This uses KMeans to compute the most 
+    This uses KMeans to compute the dominant plant health
 """
 
 # scale down the original image to make KMeans faster
@@ -87,7 +111,7 @@ toBeColorMapped = cv2.resize(toBeColorMapped, (w, h), interpolation = cv2.INTER_
 pixels = np.uint8(toBeColorMapped.reshape((-1, 1))) # convert image to 1D array of elements (element = array of one value)
 print("Finding KMeans clusters...\nFound clusters in", end=" ")
 ms = time.time()*1000.0
-kmeans = KMeans(4, max_iter=1024)
+kmeans = KMeans(3, max_iter=1024)
 kmeans.fit(pixels)
 print(time.time()*1000.0-ms, "ms") # print time taken to compute KMeans, useful when searching for the best max_iter, scale, and KMeans type.
 
