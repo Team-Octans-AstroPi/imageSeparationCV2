@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import cv2
 from fastiecm import fastiecm
+from octanscm import octanscm
 from sklearn.cluster import MiniBatchKMeans as KMeans # Either MiniBatchKMeans (faster) or KMeans (more accurate)
 import time
 import os
@@ -41,8 +42,8 @@ def calc_ndvi(image):
     ndvi = (b.astype(float) - r) / bottom
     return ndvi
 
-path = "" # change to your own path
-filename = "OCTANS_1404.jpg" # any IR photo you want to use
+path = "Path here" # change to your own path
+filename = "OCTANS_134.jpg" # any IR photo you want to use
 
 img = cv2.imread(path+'/'+filename, cv2.IMREAD_COLOR)
 if img is None:
@@ -92,14 +93,68 @@ cv2.imshow('NDVI', toBeColorMapped)
 
 ndvicm = cv2.applyColorMap(toBeColorMapped, fastiecm)
 cv2.imshow('Color Mapped NDVI', cv2.applyColorMap(toBeColorMapped, fastiecm))
-
-
+cv2.imshow('Color Mapped Octans NDVI', cv2.applyColorMap(toBeColorMapped, octanscm))
 
 """
-    Dominant Plant Health
+    Pixel NDVI Color Count
+    This estimates the plant health based on the OCTANSCM color map.
+"""
+
+octansNDVI = cv2.applyColorMap(toBeColorMapped, octanscm)
+
+"""
+# Slower way - the method below uses numpy, which is heavily optimised and is at least 800% faster than this nested loops
+plantPixels = np.count_nonzero(octansNDVI)
+plantHealth = [0, 0, 0, 0, 0, 0, 0, 0]
+
+for row in octansNDVI:
+    for pixel in row:
+        if (pixel != [255, 255, 255]).any():
+            plantPixels += 1
+            if (pixel == [50, 50, 50]).all():
+                plantHealth[0] += 1
+            elif (pixel == [120, 120, 120]).all():
+                plantHealth[1] += 1
+            elif (pixel == [250, 180, 180]).all():
+                plantHealth[2] += 1
+            elif (pixel == [50, 210, 0]).all():
+                plantHealth[3] += 1
+            elif (pixel == [5, 223, 247]).all():
+                plantHealth[4] += 1
+            elif (pixel == [0, 255, 145]).all():
+                plantHealth[5] += 1
+            elif (pixel == [0, 0, 255]).all():
+                plantHealth[6] += 1  
+            elif (pixel == [236, 128, 255]).all():
+                plantHealth[7] += 1  
+
+#for i in range(len(plantHealth)):
+#    plantHealth[i] = plantHealth[i]/plantPixels*100
+
+"""
+
+pixels = octansNDVI.size/3
+backgroundPixels = np.count_nonzero((octansNDVI == [255, 255, 255]).all(axis = 2))
+
+vegetationPixels = pixels - backgroundPixels
+
+print("Vegetation pixels:", str(vegetationPixels/pixels*100)+"%", "\t of the image\n")
+#print(np.count_nonzero((octansNDVI == [255, 255, 255]).all(axis = 2)))
+print("Plant health 1/8: ", str(np.count_nonzero((octansNDVI == [50, 50, 50]).all(axis = 2))/vegetationPixels*100)+"%", "\t of the plants")
+print("Plant health 2/8: ", str(np.count_nonzero((octansNDVI == [120, 120, 120]).all(axis = 2))/vegetationPixels*100)+"%", "\t of the plants")
+print("Plant health 3/8: ", str(np.count_nonzero((octansNDVI == [250, 180, 180]).all(axis = 2))/vegetationPixels*100)+"%", "\t of the plants")
+print("Plant health 4/8: ", str(np.count_nonzero((octansNDVI == [50, 210, 0]).all(axis = 2))/vegetationPixels*100)+"%", "\t of the plants")
+print("Plant health 5/8: ", str(np.count_nonzero((octansNDVI == [5, 223, 247]).all(axis = 2))/vegetationPixels*100)+"%", "\t of the plants")
+print("Plant health 6/8: ", str(np.count_nonzero((octansNDVI == [0, 140, 255]).all(axis = 2))/vegetationPixels*100)+"%", "\t of the plants")
+print("Plant health 7/8: ", str(np.count_nonzero((octansNDVI == [0, 0, 255]).all(axis = 2))/vegetationPixels*100)+"%", "\t of the plants")
+print("Plant health 8/8: ", str(np.count_nonzero((octansNDVI == [236, 128, 255]).all(axis = 2))/vegetationPixels*100)+"%", "\t of the plants")
+
+"""
+    Dominant Plant Health (not used anymore - replaced by the pixel count above)
     This uses KMeans to compute the dominant plant health
 """
 
+"""
 # scale down the original image to make KMeans faster
 scale = 0.25 
 w = int(toBeColorMapped.shape[1] * scale)
@@ -111,7 +166,7 @@ toBeColorMapped = cv2.resize(toBeColorMapped, (w, h), interpolation = cv2.INTER_
 pixels = np.uint8(toBeColorMapped.reshape((-1, 1))) # convert image to 1D array of elements (element = array of one value)
 print("Finding KMeans clusters...\nFound clusters in", end=" ")
 ms = time.time()*1000.0
-kmeans = KMeans(3, max_iter=1024)
+kmeans = KMeans(8, max_iter=1024)
 kmeans.fit(pixels)
 print(time.time()*1000.0-ms, "ms") # print time taken to compute KMeans, useful when searching for the best max_iter, scale, and KMeans type.
 
@@ -130,6 +185,7 @@ for color in range(0, np.shape(kmeans.cluster_centers_)[0]):
 
     cv2.imshow("Dominant plant health "+str(color), cv2.applyColorMap(array, fastiecm))
 
+"""
 
 # wait until q is pressed on the CV2 window
 while True:
