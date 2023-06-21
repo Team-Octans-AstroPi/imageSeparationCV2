@@ -9,6 +9,6 @@ this information is stored inside the CSV used to train the climate model.
 
 ## Usage
 - `main.py` is the file. You may create a Python venv and install its dependencies placed inside `requirements.txt`
-- To generate the climate model's CSV file, check out this repository, which uses a modified version of this code.
+- To generate the climate model's CSV file, check out [this repository](https://github.com/Team-Octans-AstroPi/climateCSVgenerator), which uses a modified version of this code.
 
 
