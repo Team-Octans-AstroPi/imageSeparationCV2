@@ -8,7 +8,7 @@ we compute how much of the vegetation in the image is in that category. Along wi
 this information is stored inside the CSV used to train the climate model.
 
 ## Usage
-- `main.py` is the main code, which separates . 
-- `csvGenerator.py` generates vegetation and plant health information
-- `separateClouds.py` separates clouds from images in a given folder.
+- `main.py` is the file. You may create a Python venv and install its dependencies placed inside `requirements.txt`
+- To generate the climate model's CSV file, check out this repository, which uses a modified version of this code.
+
 
